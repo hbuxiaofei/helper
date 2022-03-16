@@ -1,0 +1,1288 @@
+#!/usr/bin/env bash
+
+cd $(dirname $0)
+
+INPUT_ARGS=$@
+INPUT_NR=$#
+INPUT_ARG1=$1
+
+EXEC_NAME="helper"
+ALIAS_NAME="hr"
+RUN_DIR="/var/run/helper"
+
+LUNAR_START=2001
+
+CMD_KEYS=(
+self
+golang
+python
+lsof
+netstat
+diff
+date
+nc
+mktemp
+screen
+yum
+mysql
+git
+make
+gdb
+pkg-config
+blkid
+iostat
+fio
+dd
+strace
+perf
+vmstat
+ip
+tcpdump
+grub2-mkconfig
+sshpass
+stap
+dbus-monitor
+virsh
+qemu-system-x86_64
+guestfish
+qemu-nbd
+qemu-img
+iscsiadm
+ovs-vsctl
+kubectl
+)
+
+declare -A CMD_MAP
+CMD_MAP=(
+[self]="              info_self                do_self"
+[golang]="            info_golang              do_golang"
+[python]="            info_python              do_python"
+[lsof]="              info_lsof                do_lsof"
+[netstat]="           info_netstat             do_netstat"
+[diff]="              info_diff                do_diff"
+[date]="              info_date                do_date"
+[nc]="                info_nc                  do_nc"
+[mktemp]="            info_mktemp              do_mktemp"
+[screen]="            info_screen              do_screen"
+[yum]="               info_yum                 do_yum"
+[mysql]="             info_mysql               do_mysql"
+[git]="               info_git                 do_git"
+[make]="              info_make                do_make"
+[blkid]="             info_blkid               do_blkid"
+[iostat]="            info_iostat              do_iostat"
+[fio]="               info_fio                 do_fio"
+[gdb]="               info_gdb                 do_gdb"
+[pkg-config]="        info_pkg_config          do_pkg_config"
+[dd]="                info_dd                  do_dd"
+[strace]="            info_strace              do_strace"
+[perf]="              info_perf                do_perf"
+[vmstat]="            info_vmstat              do_vmstat"
+[ip]="                info_ip                  do_ip"
+[tcpdump]="           info_tcpdump             do_tcpdump"
+[grub2-mkconfig]="    info_grub2_mkconfig      do_grub2_mkconfig"
+[sshpass]="           info_sshpass             do_sshpass"
+[stap]="              info_stap                do_stap"
+[dbus-monitor]="      info_dbus_monitor        do_dbus_monitor"
+[virsh]="             info_virsh               do_virsh"
+[qemu-system-x86_64]="info_qemu_system_x86_64  do_qemu_system_x86_64"
+[guestfish]="         info_guestfish           do_guestfish"
+[qemu-nbd]="          info_qemu_nbd            do_qemu_nbd"
+[qemu-img]="          info_qemu_img            do_qemu_img"
+[iscsiadm]="          info_iscsiadm            do_iscsiadm"
+[ovs-vsctl]="         info_ovs_vsctl           do_ovs_vsctl"
+[kubectl]="           info_kubectl             do_kubectl"
+)
+
+function create_bash_completion()
+{
+    local completion_dir="/usr/share/bash-completion/completions"
+    local completion_file=${completion_dir}/${EXEC_NAME}
+    local _key=""
+
+    [ ! -d $completion_dir ] && mkdir -p $completion_dir
+    echo "complete_list=\"\"" > $completion_file
+
+    for _key in ${CMD_KEYS[@]}; do
+        if [ -n "$_key" ]; then
+            echo "complete_list=\"\$complete_list $_key\"" >> $completion_file
+        fi
+    done
+
+    # echo "complete -W \"\$complete_list\" ${EXEC_NAME}" >> $completion_file
+    # echo "complete -W \"\$complete_list\" ${ALIAS_NAME}" >> $completion_file
+
+cat >> $completion_file << EOF
+
+# START completion
+# Usage: Put "source bash_completion_helper.sh" into your .bashrc
+_helper()
+{
+    local cur
+    COMPREPLY=()
+    cur="\${COMP_WORDS[COMP_CWORD]}"
+
+    COMPREPLY=(\$(compgen -W "\${complete_list}" -- \${cur}))
+    return 0
+}
+
+complete -F _helper $ALIAS_NAME $EXEC_NAME
+
+# END completion
+
+EOF
+}
+
+function create_zsh_completion()
+{
+    local completion_dir="$HOME/.zsh/completions"
+    local completion_file=${completion_dir}/_${EXEC_NAME}
+    local completion_alias_file=${completion_dir}/_${ALIAS_NAME}
+    [ ! -d ${completion_dir} ] && return 0
+
+    # header
+    cat > ${completion_file} << EOF
+#compdef ${EXEC_NAME} ${ALIAS_NAME}
+
+(( \$+functions[_helper_command] )) || _helper_command()
+{
+  local -a _helper_cmds
+  _helper_cmds=(
+EOF
+
+    # body
+    local _key=""
+    local key_tuple=()
+    for _key in ${CMD_KEYS[@]}; do
+        key_tuple=(${CMD_MAP[$_key]})
+        printf "    \"%s:%s\"\n" "$_key" "$(${key_tuple[0]})" >> ${completion_file}
+    done
+
+    # footer
+    cat >> ${completion_file} << EOF
+  )
+  if (( CURRENT == 1 )); then
+    _describe -t commands 'helper command' _helper_cmds || compadd "\$@"
+  fi
+}
+_arguments -s '*::helper command:_helper_command'
+EOF
+}
+
+function info_self()
+{
+    cat << EOF
+Self command.
+EOF
+}
+
+function info_golang()
+{
+    cat << EOF
+Go is an open source programming language that makes it easy to build simple, reliable, and efficient software.
+EOF
+}
+
+function info_python()
+{
+    cat << EOF
+Python is a programming language that lets you work quickly and integrate systems more effectively.
+EOF
+}
+
+function info_lsof()
+{
+    cat << EOF
+Lists on its standard output file information about files opened by processes.
+EOF
+}
+
+function info_netstat()
+{
+    cat << EOF
+Print network connections, routing tables, interface statistics, masquerade connections, and multicast memberships.
+EOF
+}
+
+function info_diff()
+{
+    cat << EOF
+Compare files line by line.
+EOF
+}
+
+function info_date()
+{
+    cat << EOF
+Print or set the system date and time.
+EOF
+}
+
+function info_nc()
+{
+    cat << EOF
+Concatenate and redirect sockets.
+EOF
+}
+
+function info_mktemp()
+{
+    cat << EOF
+Create a temporary file or directory.
+EOF
+}
+
+function info_screen()
+{
+    cat << EOF
+Screen manager with VT100/ANSI terminal emulation.
+EOF
+}
+
+function info_yum()
+{
+    cat << EOF
+Redirecting to DNF Command Reference.
+EOF
+}
+
+function info_mysql()
+{
+    cat << EOF
+The MySQL command-line tool.
+EOF
+}
+
+function info_git()
+{
+    cat << EOF
+Git is a stupid content tracker.
+EOF
+}
+
+function info_make()
+{
+    cat << EOF
+GNU make utility to maintain groups of programs.
+EOF
+}
+
+function info_gdb()
+{
+    cat << EOF
+The GNU Debugger.
+EOF
+}
+
+function info_pkg_config()
+{
+    cat << EOF
+A system for configuring build dependency information.
+EOF
+}
+
+function info_blkid()
+{
+    cat << EOF
+Locate/Print block device attributes.
+EOF
+}
+
+function info_iostat()
+{
+    cat << EOF
+Report CPU statistics and input/output statistics for devices and partitions.
+EOF
+}
+
+function info_fio()
+{
+    cat << EOF
+Flexible I/O tester.
+EOF
+}
+
+function info_dd()
+{
+    cat << EOF
+Copy a file, converting and formatting according to the operands.
+EOF
+}
+
+function info_strace()
+{
+    cat << EOF
+Trace system calls and signals.
+EOF
+}
+
+function info_perf()
+{
+    cat << EOF
+Performance analysis tools for Linux.
+EOF
+}
+
+function info_vmstat()
+{
+    cat << EOF
+Reports information about processes, memory, paging, block IO, traps, disks and cpu activity.
+EOF
+}
+
+function info_ip()
+{
+    cat << EOF
+Show / Manipulate routing, network devices, interfaces and tunnels.
+EOF
+}
+
+function info_tcpdump()
+{
+    cat << EOF
+Dump traffic on a network.
+EOF
+}
+
+function info_grub2_mkconfig()
+{
+    cat << EOF
+Generate a GRUB configuration file.
+EOF
+}
+
+function info_sshpass()
+{
+    cat << EOF
+Noninteractive ssh password provider.
+EOF
+}
+
+function info_stap()
+{
+    cat << EOF
+Systemtap script translator/driver.
+EOF
+}
+
+function info_dbus_monitor()
+{
+    cat << EOF
+Debug probe to print message bus messages.
+EOF
+}
+
+function info_virsh()
+{
+    cat << EOF
+The main interface for managing virsh guest domains.
+EOF
+}
+
+function info_qemu_system_x86_64()
+{
+    cat << EOF
+The QEMU PC System emulator.
+EOF
+}
+
+function info_guestfish()
+{
+    cat << EOF
+The guest filesystem shell.
+EOF
+}
+
+function info_qemu_nbd()
+{
+    cat << EOF
+QEMU Disk Network Block Device Server.
+EOF
+}
+
+function info_qemu_img()
+{
+    cat << EOF
+QEMU disk image utility.
+EOF
+}
+
+function info_iscsiadm()
+{
+    cat << EOF
+Open-iscsi administration utility.
+EOF
+}
+
+function info_ovs_vsctl()
+{
+    cat << EOF
+Utility for querying and configuring ovs-vswitchd.
+EOF
+}
+
+function info_kubectl()
+{
+    cat << EOF
+Kubectl controls the Kubernetes cluster manager.
+EOF
+}
+
+function do_help()
+{
+    cat << EOF
+usage:
+    ${EXEC_NAME}/${ALIAS_NAME} [command]
+
+EOF
+}
+
+function do_all()
+{
+    local _key=""
+    local key_tuple=()
+
+    for _key in ${CMD_KEYS[@]}; do
+        key_tuple=(${CMD_MAP[$_key]})
+        printf "\033[1m%-20s\033[0m %s\n" "$_key" "$(${key_tuple[0]})"
+    done
+}
+
+function echo_info()
+{
+    echo "[Info] $@"
+}
+
+function echo_warn()
+{
+    echo "[Warn] $@"
+}
+
+function echo_err()
+{
+    echo "[Err] $@"
+}
+
+function do_self()
+{
+    local input_nr=$#
+    local input_arg2=$2
+    local exec_path="/usr/local/bin"
+
+    if [ $input_nr -eq 1 ]; then
+        cat << EOF
+install     Install the helper tools.
+EOF
+        exit 0
+    fi
+
+    if [ x"$input_arg2" == x"install" ]; then
+        [ ! -d ${exec_path} ] && mkdir -p ${exec_path}
+        cp -f ${EXEC_NAME} ${exec_path}/
+        chmod +x ${exec_path}/${EXEC_NAME}
+        ln -sf ${exec_path}/${EXEC_NAME} ${exec_path}/${ALIAS_NAME}
+        create_bash_completion
+        create_zsh_completion
+    else
+        echo_err "error: unknown sub command: '$input_arg2'"
+        exit 1
+    fi
+}
+
+function do_golang()
+{
+    cat << EOF
+# 单元测试
+go test -v -run <function>
+
+# dlv代码调试
+dlv --listen=:8181 --headless --log attach \$(pidof app.out)
+dlv connect <ip>:8181
+EOF
+}
+
+function do_python()
+{
+    cat << EOF
+# 开启自带http服务
+nohup python3 -m http.server 8001
+python3 -m http.server &
+
+# 格式化输出json
+cat test.json | python3 -m json.tool
+EOF
+}
+
+function do_lsof()
+{
+    cat << EOF
+# 显示打开文件1.txt的进程
+lsof 1.txt
+
+# 显示目录下被进程打开的文件
+lsof +D /var/log
+
+# 显示指定命令打开的文件
+lsof -c tail
+
+# 列出进程打开的文件
+lsof -p <pid>
+
+lsof -i [46][protocol][@hostname|hostaddr][:service|port]
+    version  --> 4 or 6
+    protocol --> tcp or udp
+    hostname --> Internet host name
+    hostaddr --> IP地址
+    service  --> /etc/service中的 service name (可以不止一个)
+    port     --> 端口号 (可以不止一个)
+e.g.
+lsof -i :22
+lsof -i 4tcp@centos8-dev:1-10,smtp,22
+
+EOF
+}
+
+function do_netstat()
+{
+    cat << EOF
+netstat -anp
+EOF
+}
+
+function do_diff()
+{
+    cat << EOF
+# -r: 递归; -q: 只输出哪些文件不同; -N: 比较目录时, 若文件A仅出现在某个目录中, 预设会显示
+diff -rqN
+EOF
+}
+
+function do_date()
+{
+    cat << EOF
+date +%F
+date -d "-1 day" +%F
+date +"%Y-%m-%d %H:%M:%S"
+EOF
+}
+
+function do_nc()
+{
+    cat << EOF
+# 传输文件
+nc -l 1234 > test.tar
+nc 192.168.1.100 1234 < tes.tar
+
+# 传输目录
+nc -l 1234 | tar -xvf -
+tar -cvf - * | nc 192.168.1.100 1234
+
+# 扫描端口, 超时1s
+nc -vz -w 1 192.168.1.100 22
+
+EOF
+}
+
+function do_mktemp()
+{
+    cat << EOF
+# 创建临时文件
+mktemp
+
+# 创建临时目录(-d)
+mktemp -d
+
+# 仅返回一个临时名子(-u), 并不真正创建文件:
+mktemp -u
+
+# 指定创建临时文件的模板, 后面的X要求至少有3位
+mktemp tmp.XXXXXXX
+EOF
+}
+
+function do_yum()
+{
+    cat << EOF
+yum clean all
+yum makecache
+yum install <package>
+yum provides ls
+
+# 只下载不安装, --urls显示包得url源
+yumdownload libguestfs --resolve --destdir=/home/libguestfs/
+
+yumdownload grep --resolve --installroot=/home/tmp \\
+    --destdir=/home/Packages --disablerepo="*" --enablerepo="develop"
+
+# 重新生成repo关系
+createrepo -g comps.xml .
+
+EOF
+}
+
+function do_screen()
+{
+    cat << EOF
+# 开启一个screen
+screen -S <name>
+
+# 列出所有screen
+screen -ls
+
+# 连接一个screen
+screen -r <name>
+EOF
+}
+
+function do_mysql()
+{
+    cat << EOF
+# 登陆mysql
+mysql -h <ip> -u <name> -p<password>
+mysql> show databases;
+mysql> use <database>;
+mysql> show tables;
+
+# 配置密码
+mysqladmin -u root password <password>
+EOF
+}
+
+function do_blkid()
+{
+    cat << EOF
+blkid /dev/vda1
+blkid -t LABEL='config-2' -o device
+blkid -t TYPE='ext4' -o device
+EOF
+}
+
+function do_make()
+{
+    cat << EOF
+# 驱动编译
+make -j <CPU_NR> -C /lib/modules/\$(uname -r)/build M=\$(pwd) modules
+EOF
+}
+
+function do_git()
+{
+    cat << EOF
+# 配置邮件地址
+git config --global user.email "xxx@xxx.com"
+
+# 配置用户名
+git config --global user.name "xxx"
+
+# 配置默认编辑器为vim
+git config --global core.editor vim
+
+# 配置git高亮显示
+git config --global color.ui auto
+
+# 修改最近一次提交commit message
+git commit --amend
+
+# 生成patch
+git format-patch -n <n> <id>
+git format-patch <id>..<id>
+
+# 打patch
+git am <xxx.patch>
+
+# 合并多个commit
+git rebase -i HEAD^^
+git rebase -i HEAD~2
+git rebase -i <id>~<n>
+
+# 挑拣提交, 将其他分支commit应用到当前分支
+git cherry-pick <id>
+
+# 定制查看Log日志
+git log --pretty=oneline
+git log --pretty=format:"%h-%an(%ae),%ai:%s"
+
+# 提交commit带signed-off-by
+git commit --singoff -am <message>
+
+# 远程提交代码
+git remote add gitlab git@gitlab:xxx/xxx
+git push gitlab master
+git push gitlab --mirror
+
+# 大文件lfs操作
+git lfs track "*.tar"
+git lfs ls-files
+git lfs clone
+
+# 查看文件修订记录
+git blame -L <line_from>,<line_to> <file>
+
+# git支持tab自动补全
+yum install bash-completion
+
+# git for zsh
+git confit --add oh-my-zsh.hide-status 1 // 隐藏
+git confit --add oh-my-zsh.hide-status 0 // 打开
+
+# Commit message 和 Change log 编写
+feat      :新功能(feature)
+fix       :修补bug
+docs      :文档(documentation)
+style     :格式(不影响代码运行的变动)
+perf      :提升性能
+chore     :构建过程或辅助工具的变动
+refactor  :重构(即不是新增功能, 也不是修改bug的代码变动)
+ci        :CI相关
+test      :增加测试
+
+revert    :撤销以前的commit
+revert: feat(pencil): add 'graphiteWidth' option
+// 空一行
+This reverts commit 667ecc1654a317a13331b17617d973392f415f02
+
+e.g.
+feat(explanatory text): wrap detailed explanatory text to about 72 characters
+or so if necessary (第一个字母小写, 动词开头, 结尾不加句号)
+// 空一行
+Further paragraphs come after blank lines
+// 空一行
+- Bullet points are okay, too
+- Use a hanging indent
+// 空一行
+Closes #123
+
+EOF
+}
+
+function do_pkg_config()
+{
+    cat << EOF
+pkg-config --libs libvncserver
+pkg-config --path libvncserver
+EOF
+}
+
+function do_gdb()
+{
+    cat << EOF
+gdb attach <pid>
+gdb --args app.out 123
+
+# 调试core dump
+gdb <program> <core dump file>  // gdb app.out core.11127
+
+gdb> b <file>:<line>    :设置断点
+gdb> b fn if a>b        :条件断点设置
+gdb> info b             :查看所有断点
+gdb> r                  :运行程序
+gdb> c                  :继续直到下个断点
+gdb> n                  :单步跟踪
+gdb> s                  :单步调试, 如果有函数则进入
+gdb> delete <n>         :删除断点
+gdb> delete breakpoints :删除所有断点
+gdb> bt                 :查看调用栈
+gdb> list               :列出源代码, 简写为l
+gdb> p <var>            :打印变量
+
+[tips]
+cgdb     可以看作gdb得界面增强版, 用来替代gdb -tui
+EOF
+}
+
+function do_fio()
+{
+    cat << EOF
+#顺序读
+fio -filename=/dev/sda -direct=1 -iodepth 1 -thread -rw=read -ioengine=psync -bs=16k -size=200G \\
+	-numjobs=30 -runtime=1000 -group_reporting -name=mytest
+
+#顺序写
+fio -filename=/dev/sda -direct=1 -iodepth 1 -thread -rw=write -ioengine=psync -bs=16k -size=200G \\
+	-numjobs=30 -runtime=1000 -group_reporting -name=mytest
+
+#随机读
+fio -filename=/dev/sda -direct=1 -iodepth 1 -thread -rw=randread -ioengine=psync -bs=16k -size=200G \\
+	-numjobs=30 -runtime=1000 -group_reporting -name=mytest
+
+#随机写
+fio -filename=/dev/sda -direct=1 -iodepth 1 -thread -rw=randwrite -ioengine=psync -bs=16k -size=200G \\
+	-numjobs=30 -runtime=1000 -group_reporting -name=mytest
+
+#混合随机读写
+fio -filename=/dev/sda -direct=1 -iodepth 1 -thread -rw=randrw -rwmixread=70 -ioengine=psync -bs=16k -size=200G \\
+	-numjobs=30 -runtime=100 -group_reporting -name=mytest -ioscheduler=noop
+EOF
+}
+
+function do_iostat()
+{
+    cat << EOF
+# -x: 输出更详细信息; -k/-m: 指定输出单位; -d: 单独输出Device结果
+# 每隔1s 采样一次, 共2 次
+iostat -x -k -d 1 2  // hdparm测试磁盘速率: hdparm -t --direct /dev/sda1
+EOF
+}
+
+function do_dd()
+{
+    cat << EOF
+dd if=/dev/zero of=out.disk bs=1K count=10 oflag=direct
+EOF
+}
+
+function do_strace()
+{
+    cat << EOF
+strace -o output.txt -T -tt -e trace=all -p <pid>
+EOF
+}
+
+function do_tcpdump()
+{
+    cat << EOF
+tcpdump -i eth0
+tcpdump tcp and port <port>
+tcpdump -w xx.txt
+EOF
+}
+
+function do_ip()
+{
+    cat << EOF
+ip link set enp0s3 up
+ip link set enp0s3 down
+ip route show | column -t
+ip route add default via 192.168.150.123 dev enp0s3
+ip route add 10.15.150.0/24 via 192.168.150.123 dev enp0s3
+ip route del 10.15.150.0/24
+EOF
+}
+
+function do_perf()
+{
+    cat << EOF
+# 记录数据, -a: all cpus; -g: Enables call-graph recording
+perf record -a -g -p <pid> sleep <seconds>
+
+# 加载数据
+perf report
+
+# 查看调用栈
+perf report -n --header --stdio
+EOF
+}
+
+function do_vmstat()
+{
+    cat << EOF
+# 间隔1s打印
+vmstat 1 -wt
+EOF
+}
+
+function do_grub2_mkconfig()
+{
+    cat << EOF
+# 重新生成grub, 会自动识别是bios还是uefi
+grub2-mkconfig
+
+[tips]
+# grub参数 /etc/default/grub: GRUB_CMDLINE_LINUX
+## 禁用所有可选的CPU漏洞缓解措施
+## /sys/devices/system/cpu/vulnerabilities
+mitigations=off
+
+## 时钟源强制使用tsc
+## /sys/devices/system/clocksource/clocksource0/available_clocksource(current_clocksource)
+clocksource=tsc
+tsc=reliable
+
+EOF
+}
+
+function do_sshpass()
+{
+    cat << EOF
+sshpass -p <passwd> scp -r -o StrictHostKeyChecking=no root@<ip>:/home/path.txt ./
+EOF
+}
+
+function do_stap()
+{
+    cat << EOF
+stap -l 'kernel.function("*")'
+stap -l 'modules("xfs").function("*")'
+stap -l 'process("/lib64/libc.so.6").function("*")'
+
+stap -L "syscall.*"
+
+# 内核systemtap配置
+ln -s /lib/modules /usr/lib/debug/modules
+bunzip2 -k /boot/vmlinux-\$(uname -r).bz2
+ln -s /boot/vmlinux-\$(uname -r) /lib/modules/\$(uname -r)/vmlinx
+
+# 内核编译生成debuginfo
+## 驱动生成debuginfo
+objcopy --only-keep-debug xfs.ko xfs.ko-debug
+## 修改scripts/package/mkspec脚本, 生成kernel debuginfo
+%define debug_package %{nil}  =>  %define debug_package 1%
+## 编译rpm生成debuginfo
+%pre
+%setup -q
+%debug_package
+EOF
+}
+
+function do_dbus_monitor()
+{
+    cat << EOF
+dbus-monitor --system interface=com.dbus.service
+EOF
+}
+
+function do_virsh()
+{
+    cat << EOF
+virsh qemu-monitor-command <domain> --hmp help
+virsh qemu-monitor-command <domain> --hmp info
+virsh qemu-monitor-command <domain> --pretty '{"execute":"query-commands"}'
+virsh qemu-monitor-command <domain> --pretty '{"execute":"query-block"}'
+
+virsh qemu-agent-command <domain> '{"execute":"guest-info"}'
+EOF
+}
+
+function do_qemu_system_x86_64()
+{
+    cat << EOF
+qemu-system-x86_64 -machine help
+qemu-system-x86_64 -machine virt -cpu help
+EOF
+}
+
+function do_qemu_nbd()
+{
+    cat << EOF
+modprobe nbd max_part=8
+qemu-img create -f qcow2 cluster_size=512 test.qcow2 10M
+qemu-nbd -c /dev/nbd0 test.qcow2
+
+mkfs.ext4 /dev/nbd0
+mkdir 111
+mount /dev/nbd0 111
+
+umount 111
+qemu-nbd --disconnect /dev/nbd0
+hexdump test.qcow2 -C
+EOF
+}
+
+function do_qemu_img()
+{
+    cat << EOF
+qemu-img convert -f raw input.img -O qcow2 output.qcow2
+EOF
+}
+
+function do_guestfish()
+{
+    cat << EOF
+export LIBGUESTFS_BACKEND=direct guestfish --rw -a test.img
+<fs> run
+<fs> list-filesystems
+<fs> mount /dev/sda1 /
+<fs> touch xxx.txt
+<fs> edit xxx.txt
+<fs> chmod 0755 xxx.txt
+<fs> rm xxx.txt
+<fs> exit
+EOF
+}
+
+function do_iscsiadm()
+{
+    cat << EOF
+# 发现iSCSI存储
+iscsiadm -m discovery -t sendtargets -p <IP:port>
+
+# 删除iSCSI发现记录
+iscsiadm -m node -o delete -T TARGET -p IP:port
+
+# 登录iSCSI存储
+iscsiadm -m node -T TARGET -p IP:port -l
+
+# 登出iSCSI存储
+iscsiadm -m node -T TARGET -p IP:port -u
+
+# 列出
+iscsiadm -m node
+iscsiadm -m session
+
+lsblk                // 列出 block devices
+lsblk --inverse
+
+lspci                // 列出pci devices
+lspci -vv -s 00:06.0
+
+lsscsi               // 列出 iscsi devices
+
+udevadm info -q env -p /devices/platform/host25/session11/target25:0:0/25:0:0:1/block/sde
+udevadm info --query=all --name=sda | grep ID_SERIAL=
+
+EOF
+}
+
+function do_ovs_vsctl()
+{
+    cat << EOF
+ovs-vsctl show
+ovs-vsctl list-br
+ovs-vsctl list-ports vswitch0
+
+ovs-vsctl list qos
+ovs-vsctl list queue
+
+ovs-vsctl -- find Interface name="vnet0"
+ovs-vsctl -- find Bridge name="vswitch0"
+ovs-vsctl -- find Port name="vnet3"
+
+ovs-ofctl show vswitch0
+ovs-ofctl dump-flows vswitch0 // 查看流表
+
+ovs-appctl fdb/show vswitch1  // 查看MAC表
+ovs-appctl ofproto/trace vswitch1 dl_dst=fa:16:3e:5e:5f:7c
+
+ovsdb-client list-dbs
+ovsdb-client dump
+EOF
+}
+
+function do_kubectl()
+{
+    cat << EOF
+kubectl get pods --all-namespaces
+kubectl get pods -n <namespace>
+kubectl logs -n <namespace> <pod> -f
+kubectl describe pods -n <namespace>
+
+kubectl exec -n <namespace> -p <pod> -it bash
+EOF
+}
+
+function check_keys()
+{
+    local _key=""
+    local _key2=""
+
+    if [ ${#CMD_KEYS[@]} -ne ${#CMD_MAP[@]} ]; then
+        echo_err "error: cmd keys"
+        exit 1
+    fi
+
+    for _key in ${CMD_KEYS[@]}; do
+        for _key2 in ${!CMD_MAP[@]}; do
+            if [ x"$_key" == x"$_key2" ]; then
+                break
+            fi
+        done
+
+        if [ x"$_key" != x"$_key2" ]; then
+            echo_err "error: cmd key $_key"
+            exit 1
+        fi
+    done
+}
+
+function check_sub_cmd()
+{
+    local sub_cmd=$1
+    local _key=""
+    for _key in ${CMD_KEYS[@]}; do
+        if [ x"$_key" == x"$sub_cmd" ]; then
+            return 0
+        fi
+    done
+    echo_err "error: unknown command: '$sub_cmd'"
+    exit 1
+}
+
+function main()
+{
+    local arg1="$1"
+    local is_help=0
+    local key_tuple=()
+
+    # check keys
+    check_keys
+
+    if [ $INPUT_NR -eq 0 ]; then
+        do_all $INPUT_ARGS
+        exit 0
+    fi
+
+    case ${arg1} in
+        help) is_help=1
+            ;;
+        --help) is_help=1
+            ;;
+        -h) is_help=1
+            ;;
+        *) is_help=0
+            ;;
+    esac
+
+    if [ $is_help -eq 1 ]; then
+        do_help
+        exit 0
+    fi
+
+    # check sub command
+    check_sub_cmd $INPUT_ARGS
+
+    key_tuple=(${CMD_MAP[$arg1]})
+    ${key_tuple[1]} $INPUT_ARGS
+}
+
+
+function lunar_get_leap_month()
+{
+	local LMOY=(0x40 0x02 0x07 0x00 0x50
+	  	    0x04 0x09 0x00 0x60 0x04
+	  	    0x00 0x20 0x60 0x05 0x00
+	  	    0x30 0xb0 0x06 0x00 0x50
+	  	    0x02 0x07 0x00 0x50 0x03)
+	local sft=$(( $1 - $LUNAR_START ))  # $1: 2001-2050
+	local dom=${LMOY[$(( $sft >> 1 ))]}
+	echo $(( $(( sft & 1 ))?$(( $dom & 0x0f )):$(( $dom >> 4 )) ))
+}
+
+function lunar_get_days_of_month()
+{
+	local DOM=(0xd4a8 0xd4a0 0xda50 0x5aa8 0x56a0 0xaad8 0x25d0 0x92d0 0xc958 0xa950
+	 	   0xb4a0 0xb550 0xb550 0x55a8 0x4ba0 0xa5b0 0x52b8 0x52b0 0xa930 0x74a8
+	 	   0x6aa0 0xad50 0x4da8 0x4b60 0x9570 0xa4e0 0xd260 0xe930 0xd530 0x5aa0
+	 	   0x6b50 0x96d0 0x4ae8 0x4ad0 0xa4d0 0xd258 0xd250 0xd520 0xdaa0 0xb5a0
+	 	   0x56d0 0x4ad8 0x49b0 0xa4b8 0xa4b0 0xaa50 0xb528 0x6d20 0xada0 0x55b0)
+	local y=$1    # $1: 2001-2050
+	local m=$2    # $2: 1-12
+	local high=0
+	local low=29
+
+	local sft=$(( 16 - $m ))
+
+	local dom=${DOM[$(( $y - $LUNAR_START ))]}
+	local lmoy=$(lunar_get_leap_month $y)
+
+	[ $m -gt $lmoy -a $lmoy -gt 0 ] && let "sft--"
+	[ $(( $dom & $(( 1 << $sft )) )) -gt 0 ] && let "low++"
+
+	if [ $m -eq $lmoy ]; then
+		let "sft--"
+		high=$(( $(( $dom & ( 1 << $sft ) ))?30:29 ))
+	fi
+	echo $(( low + ( high << 16) ))
+}
+
+function lunar_get_days_of_year()
+{
+	local y=$1  # $1: 2001-2050
+	local d=0
+	local i=""
+	local tmp=""
+
+	for i in {1..12}; do
+		tmp=$(lunar_get_days_of_month $y $i)
+		let "d+=$(( $(( $tmp >> 16)) & 0xffff ))"
+		let "d+=$(( $tmp & 0xffff ))"
+	done
+	echo $d
+}
+
+function lunar_show_mythical_egg()
+{
+	cat << EOF
+Man-Month is Mythical.
+Silver Bullet is Mythical.
+Perfect is Mythical.
+Mythical Designs are copies of Mythical Organizations.
+EOF
+}
+
+function lunar_parse_date()
+{
+	local d=${*:-$(date)}
+	local sft=$(( ( $(date -d "$d" +%s) - $(date -d "${LUNAR_START}/01/01" +%s) ) / 60 / 60 / 24 ))
+
+	local tmp=""
+	local ly=""
+	local lm=""
+	local ld=""
+	local leap=""
+
+	if [ $sft -lt 23 ]; then
+		ly=2000
+		lm=12
+		ld=$(( $sft + 7 ))
+	else
+		let "sft-=23"
+		ly=2001
+		lm=1
+		ld=1
+		tmp=$(lunar_get_days_of_year $ly)
+		while [ $sft -ge $tmp ]; do
+			let "sft-=$tmp"
+			let "ly++"
+			tmp=$(lunar_get_days_of_year $ly)
+		done
+		tmp=$(( $(lunar_get_days_of_month $ly $lm) & 0xffff ))
+		while [ $sft -ge $tmp ]; do
+			let "sft-=$tmp"
+			if [ $lm -eq $(lunar_get_leap_month $ly) ]; then
+				tmp=$(( $(lunar_get_days_of_month $ly $lm) >> 16 ))
+				if [ $sft -lt $tmp ]; then
+					test $tmp -gt 0 && leap="leap"
+					break
+				fi
+				let "sft-=$tmp"
+			fi
+			let "lm++"
+			tmp=$(( $(lunar_get_days_of_month $ly $lm) & 0xffff ))
+		done
+		let "ld+=$sft"
+	fi
+
+	if [ $ld -eq 15 ]; then
+		lunar_show_mythical_egg
+		echo -e "\t\t\tLunar Calendar: $ly.$lm.$ld\n"
+		[ -d $RUN_DIR ] && rm -rf $RUN_DIR
+	fi
+}
+
+function is_run_once_today()
+{
+    local date_now=$(date +"%Y-%m-%d" 2>/dev/null)
+    local date_old=""
+    [ ! -d $RUN_DIR ] && mkdir -p $RUN_DIR
+
+    if [ ! -e ${RUN_DIR}/date ]; then
+        echo $date_now > ${RUN_DIR}/date
+        return 1
+    else
+        date_old=$(head -n1 ${RUN_DIR}/date 2>/dev/null)
+        if [ x"$date_now" != x"$date_old" ]; then
+            echo $date_now > ${RUN_DIR}/date
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+is_run_once_today
+if [ $? -ne 0 ]; then
+    lunar_parse_date
+fi
+
+main $@
+
+exit $?
