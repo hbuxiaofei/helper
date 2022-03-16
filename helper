@@ -771,18 +771,21 @@ gdb --args app.out 123
 # 调试core dump
 gdb <program> <core dump file>  // gdb app.out core.11127
 
-gdb> b <file>:<line>    :设置断点
-gdb> b fn if a>b        :条件断点设置
-gdb> info b             :查看所有断点
-gdb> r                  :运行程序
-gdb> c                  :继续直到下个断点
-gdb> n                  :单步跟踪
-gdb> s                  :单步调试, 如果有函数则进入
-gdb> delete <n>         :删除断点
-gdb> delete breakpoints :删除所有断点
-gdb> bt                 :查看调用栈
-gdb> list               :列出源代码, 简写为l
-gdb> p <var>            :打印变量
+gdb> b <file>:<line>         :设置断点
+gdb> b fn if a>b             :条件断点设置
+gdb> info b                  :查看所有断点
+gdb> r                       :运行程序
+gdb> c                       :继续直到下个断点
+gdb> n                       :单步跟踪
+gdb> s                       :单步调试, 如果有函数则进入
+gdb> delete <n>              :删除断点
+gdb> delete breakpoints      :删除所有断点
+gdb> bt                      :查看调用栈
+gdb> thread apply all bt     :查看所有线程调用栈
+gdb> info threads            :查看所有线程信息
+gdb> thread <id>             :切换到线程<id>
+gdb> list                    :列出源代码, 简写为l
+gdb> p <var>                 :打印变量
 
 [tips]
 cgdb     可以看作gdb得界面增强版, 用来替代gdb -tui
